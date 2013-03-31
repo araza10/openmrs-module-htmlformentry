@@ -13,9 +13,6 @@
  */
 package org.openmrs.module.htmlformentry;
 
-import java.util.Date;
-import java.util.Map;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +22,9 @@ import org.openmrs.api.context.Context;
 import org.openmrs.logic.util.LogicUtil;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.springframework.mock.web.MockHttpServletRequest;
+
+import java.util.Date;
+import java.util.Map;
 
 /**
  * Tests the obs tag.
@@ -91,7 +91,16 @@ public class ObsTagTest extends BaseModuleContextSensitiveTest {
 		Assert.assertTrue("Result: " + session.getHtmlToDisplay(),
 		    session.getHtmlToDisplay().contains("<option value=\"true\" selected=\"true\">"));
 	}
-	
+
+    @Test
+    public void shouldSetSelectSize() throws Exception {
+        String htmlform = "<htmlform><obs conceptId=\"1\" required=\"true\" size=\"3\" id=\"paymentAmount\" answerLabels=\"50,Exempt\" answers=\"50,0\" defaultValue=\"50\" style=\"dropdown\"/></htmlform>";
+        FormEntrySession session = new FormEntrySession(patient, htmlform, null);
+        String htmlToDisplay = session.getHtmlToDisplay();
+        Assert.assertTrue("Result: " + htmlToDisplay,
+                htmlToDisplay.matches(".*<select.*size=3.*"));
+    }
+
 	@Test
 	public void shouldSetDefaultBooleanValueToFalse() throws Exception {
 		LogicUtil.registerDefaultRules();

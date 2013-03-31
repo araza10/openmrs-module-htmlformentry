@@ -1,17 +1,5 @@
 package org.openmrs.module.htmlformentry.element;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang.StringUtils;
 import org.openmrs.Concept;
 import org.openmrs.ConceptAnswer;
@@ -50,6 +38,17 @@ import org.openmrs.module.htmlformentry.widget.ToggleWidget;
 import org.openmrs.module.htmlformentry.widget.Widget;
 import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.OpenmrsUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Holds the widgets used to represent a specific Observation, and serves as both the
@@ -179,7 +178,16 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 			id = parameters.get("id");
 		prepareWidgets(context, parameters);
 	}
-	
+
+
+    private Widget buildDropdownWidget(Integer size){
+        Widget dropdownWidget = new DropdownWidget(size);
+        if(size==1 || !required){
+            // show an empty option when size =1, even if required =true
+            ((DropdownWidget) dropdownWidget).addOption(new Option());
+        }
+        return dropdownWidget;
+    }
 	private void prepareWidgets(FormEntryContext context, Map<String, String> parameters) {
 		String userLocaleStr = Context.getLocale().toString();
 		try {
@@ -187,6 +195,10 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 				answerConcept = HtmlFormEntryUtil.getConcept(parameters.get("answerConceptId"));
 		}
 		catch (Exception ex) {}
+        Integer size = 1;
+        try {
+            size = Integer.valueOf(parameters.get("size"));
+        }catch (Exception ex) {}
 		if (context.getCurrentObsGroupConcepts() != null && context.getCurrentObsGroupConcepts().size() > 0) {
 			existingObs = context.getObsFromCurrentGroup(concept, answerConcept);
 		} else if (concept != null) {
@@ -254,8 +266,7 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 					((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);
                 }
 			} else { // dropdown
-				valueWidget = new DropdownWidget();
-				((DropdownWidget) valueWidget).addOption(new Option());
+				valueWidget =buildDropdownWidget(size);
 			}
 			for (int i = 0; i < concepts.size(); ++i) {
 				Concept c = concepts.get(i);
@@ -335,8 +346,7 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 							((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);
                         }
 					} else { // dropdown
-						valueWidget = new DropdownWidget();
-						((DropdownWidget) valueWidget).addOption(new Option());
+                        valueWidget = buildDropdownWidget(size);
 					}
 					// need to make sure we have the initialValue too
 					Number lookFor = existingObs == null ? null : existingObs.getValueNumeric();
@@ -476,12 +486,12 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 						if (rows != null || cols != null || "textarea".equals(parameters.get("style"))) {
 							valueWidget = new TextFieldWidget(rows, cols);
 						} else {
-							Integer size = null;
+							Integer textFieldSize = null;
 							try {
-								size = Integer.valueOf(parameters.get("size"));
+                                textFieldSize = Integer.valueOf(parameters.get("size"));
 							}
 							catch (Exception ex) {}
-							valueWidget = new TextFieldWidget(size);
+							valueWidget = new TextFieldWidget(textFieldSize);
 						}
 					} else {
 						if ("radio".equals(parameters.get("style"))) {
@@ -490,8 +500,7 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 								((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);
                             }
 						} else { // dropdown
-							valueWidget = new DropdownWidget();
-							((DropdownWidget) valueWidget).addOption(new Option());
+							valueWidget =buildDropdownWidget(size);
 						}
 						// need to make sure we have the initialValue too
 						String lookFor = existingObs == null ? null : existingObs.getValueText();
@@ -634,8 +643,7 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 								((RadioButtonsWidget) valueWidget).setAnswerSeparator(answerSeparator);
                             }
 						} else {
-							valueWidget = new DropdownWidget();
-							((DropdownWidget) valueWidget).addOption(new Option());
+							valueWidget = buildDropdownWidget(size);
 						}
 						for (int i = 0; i < conceptAnswers.size(); ++i) {
 							Concept c = conceptAnswers.get(i);
@@ -936,13 +944,12 @@ public class ObsSubmissionElement implements HtmlGeneratorElement, FormSubmissio
 			ret.append(commentFieldWidget.generateHtml(context));
 		}
 
-		// if value is required
-		if (required) {
-			ret.append("<span class='required'>*</span>");
-		}
-		
 		if (context.getMode() != Mode.VIEW) {
-			ret.append(" ");
+            // if value is required
+            if (required) {
+                ret.append("<span class='required'>*</span>");
+            }
+            ret.append(" ");
 			ret.append(errorWidget.generateHtml(context));
 		}
 		if (id != null)
